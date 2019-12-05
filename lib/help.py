@@ -1,12 +1,13 @@
 # __author: linle
 # __date: 2019/12/5
 
-from conf import settings
+
 from lib.util import common
 import requests
 import json
 from datetime import datetime
 from os import system, path
+import os
 
 
 class Help():
@@ -46,29 +47,27 @@ class Help():
         return True
 
     def check_update(self):
-        _download_mesg = {
-            'url': r'https://raw.githubusercontent.com/lurekera/filesoperator/master/softwareinfo.json',
-            'filename': 'versioninfo.json'}
+        _download_msg = {'url': 'https://raw.githubusercontent.com/lurkera/FileOperator/master/conf/versioninfo.json'}
+        filepath = r'..\conf\versioninfo.json'
+        print(os.getcwd())
+        with open(filepath) as f:
+            local = json.load(f)
         try:
-            from bin.run import BASEDIR
-            filepath = path.join(BASEDIR, r'lib\help\softwareinfo.json')
-            with open(filepath) as f:
-                j = json.load(f)
-            rsp = requests.get(_download_mesg['url'], timeout=3)
-            jurl = json.loads(rsp.content)
+            rsp = requests.get(_download_msg['url'], timeout=10)
+            git = json.loads(rsp.content)
             msg = []
             if rsp.status_code == 200:
-                for ju in jurl:
-                    if ju['name'] == j['name']:
-                        timeurl = datetime.strptime(ju['publishtime'], '%Y-%m-%d')
-                        timelocal = datetime.strptime(j['publishtime'], '%Y-%m-%d')
-                        if ju['version'] != j['version'] or (timeurl - timelocal).days > 0:
-                            msg.append('工具有更新，请按照下面链接下载最新版本：')
-                            msg.append(ju['download_url'])
-                            printer.print_list_formating(msg, 1)
-                        else:
-                            msg.append('您已使用最新版本')
-                            printer.print_list_formating(msg, 1)
+                if git['name'] == local['name']:
+                    timegit = datetime.strptime(git['publishtime'], '%Y-%m-%d')
+                    timelocal = datetime.strptime(local['publishtime'], '%Y-%m-%d')
+                    if git['version'] != local['version'] or (timegit - timelocal).days > 0:
+                        msg.append('工具有更新，请按照下面链接下载最新版本：')
+                        msg.append(git['downloadurl'])
+                        common.print_list_formating(msg, 1)
+                    else:
+                        msg.append('  已使用最新版本...  ')
+                        common.print_list_formating(msg, 1)
             return True
         except Exception as e:
-            print(e)
+            print('github连接超时...')
+            system('pause')

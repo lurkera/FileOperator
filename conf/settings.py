@@ -7,7 +7,7 @@ version = "v1.0"
 modules = [
     {'id': 1, 'title': '文件合并', 'module': 'lib.fileunion', 'class': 'FileUnion'},
     {'id': 2, 'title': '文件分割', 'module': 'lib.filesplit', 'class': 'FileSplit'},
-    {'id': 3, 'title': '软件更新和帮助', 'path': 'lib.help', 'class': 'Help'}
+    {'id': 3, 'title': '软件更新和帮助', 'module': 'lib.help', 'class': 'Help'}
 ]
 
 

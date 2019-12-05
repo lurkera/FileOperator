@@ -5,7 +5,7 @@ import os
 import sys
 
 
-# os.system('')
+os.system('')
 BASEDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASEDIR)
 from lib import fileoperator
