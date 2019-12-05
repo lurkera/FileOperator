@@ -49,7 +49,6 @@ class Help():
     def check_update(self):
         _download_msg = {'url': 'https://raw.githubusercontent.com/lurkera/FileOperator/master/conf/versioninfo.json'}
         filepath = r'..\conf\versioninfo.json'
-        print(os.getcwd())
         with open(filepath) as f:
             local = json.load(f)
         try:
