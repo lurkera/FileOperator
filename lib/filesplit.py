@@ -198,14 +198,12 @@ class FileSplit():
             if choice:
                 if choice.lower() == 'q': exit()
                 if choice.lower() == 'b': return
-                if choice.isdigit():
-                    ret = ceil(float(choice) * 1024 * 1024)
-                    if ret > 0:
-                        return ret
-                    else:
-                        print('输入数字不能为0，请重新输入!')
+                ret = ceil(float(choice) * 1024 * 1024)
+                if ret > 0:
+                    return ret
                 else:
-                    print('输入非数字，请重新输入！')
+                    print('输入数字不能为0，请重新输入!')
+
 
     def __get_split_header(self, f, optname,skiprow=0):
         try:
