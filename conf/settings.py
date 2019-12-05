@@ -3,7 +3,6 @@
 
 title = "文件处理助手"
 version = "v1.0"
-path = "./lib"
 
 modules = [
     {'id': 1, 'title': '文件合并', 'module': 'lib.fileunion', 'class': 'FileUnion'},

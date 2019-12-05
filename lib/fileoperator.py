@@ -23,7 +23,7 @@ def start():
                 opt = optclass()
                 if opt.run(): system('pause')
         except KeyboardInterrupt as k:
-            print('程序终止......')
+            print('程序中止......')
             system('pause')
         except Exception as e:
             print(e)

@@ -94,25 +94,28 @@ def xls_to_csv(fns, trans_list):
     for fn in fns:
         (fpath, fbasename) = path.split(fn)
         print(f'change file {fbasename} to csv...')
-        wb = open_workbook(fn)
-        for ws in wb.sheets():
-            (savename, saveextension) = path.splitext(fbasename)
-            sheetname = sub_invalid_symbol(ws.name)
-            savename = savename + '_' + sheetname + '.csv'
-            savefn = path.join(fpath, savename)
-            if path.exists(savefn): remove(savefn)
-            if ws.visibility == 0:
-                if ws.nrows > 0 and ws.ncols > 0:
-                    trans_list.append(savefn)
-                    with open(savefn, 'a', encoding='gbk', newline='') as f:
-                        w = writer(f)
-                        for i in range(ws.nrows):
-                            w.writerow(ws.row_values(i))
+        try:
+            wb = open_workbook(fn)
+            for ws in wb.sheets():
+                (savename, saveextension) = path.splitext(fbasename)
+                sheetname = sub_invalid_symbol(ws.name)
+                savename = savename + '_' + sheetname + '.csv'
+                savefn = path.join(fpath, savename)
+                if path.exists(savefn): remove(savefn)
+                if ws.visibility == 0:
+                    if ws.nrows > 0 and ws.ncols > 0:
+                        trans_list.append(savefn)
+                        with open(savefn, 'a', encoding='gbk', newline='') as f:
+                            w = writer(f)
+                            for i in range(ws.nrows):
+                                w.writerow(ws.row_values(i))
+        except KeyboardInterrupt as k:
+            pass
 
 
 # 大数据按行分割读取
-def trunk_file_byrow(fn, encode, chunkline,start_row):
-    reader = pd.read_csv(fn, skiprows=start_row-1, encoding=encode, error_bad_lines=False, low_memory=False,
+def trunk_file_byrow(fn, encode, chunkline=500000, skiprow=0):
+    reader = pd.read_csv(fn, skiprows=skiprow, encoding=encode, error_bad_lines=False, low_memory=False,
                          chunksize=chunkline, keep_default_na=False)
     n = 0
     for chunk in reader:
@@ -125,22 +128,15 @@ def trunk_file_byrow(fn, encode, chunkline,start_row):
 def print_title(d):
     n = 50
     left_black = int(n * 0.3)
-    print("-" * n)
+    print('+' + '-' * n + '+')
     for index, value in enumerate(d):
-        print('|' + ' ' * (n - 2) + '|')
+        print('|' + ' ' * n + '|')
         s = str(index + 1) + '、' + value['title']
         slen = len(s.encode('gbk'))
-        news = '|' + ' ' * left_black + s + ' ' * (n - left_black - slen - 2) + '|'
+        news = '|' + ' ' * left_black + s + ' ' * (n - left_black - slen) + '|'
         print(news)
-    print('|' + ' ' * (n - 2) + '|')
-    print("-" * n)
-
-
-def get_input_paras(s):
-    while True:
-        paras = input(s + '>>>').strip()
-        if paras:
-            return paras
+    print('|' + ' ' * n + '|')
+    print('+' + '-' * n + '+')
 
 
 def get_floder(optname):
@@ -166,21 +162,27 @@ def get_need_head(optname):
         if choice:
             if choice.lower() == 'b': return
             if choice.lower() == 'q': exit()
-            choice = int(choice)
-            if choice in [0, 1]:
-                return choice
+            if choice.isdigit():
+                choice = int(choice)
+                if choice in [0, 1]:
+                    return choice
+                else:
+                    print('输入错误，请重新输入！')
             else:
-                print('输入错误，请重新输入！')
+                print('输入非数字，请重新输入！')
 
 
-def get_start_row(optname):
+def get_skip_row(optname):
     while True:
-        inputstr = f'[{optname}]请输入起始行位置>>>'
+        inputstr = f'[{optname}]请输入跳过行数>>>'
         choice = input(inputstr).strip()
         if choice:
             if choice.lower() == 'b': return
             if choice.lower() == 'q': exit()
-            return int(choice)
+            if choice.isdigit():
+                return int(choice)
+            else:
+                print('输入非数字，请重新输入！')
 
 
 def print_rateofprogress(current, total, barlen=35):
@@ -188,3 +190,43 @@ def print_rateofprogress(current, total, barlen=35):
     s = '>' * j + "." * (barlen - j)
     percent = round((current / total) * 100, 2)
     print('\r%s%s%%' % (s, percent), end='')
+
+
+def trunk_csv_bysize(fp, needtitle, chunksize=100 * 1024 * 1024, skiprow=0):
+    f = open(fp, 'rb')
+    buf = None
+    title = None
+    lenbuf = 0
+    if skiprow > 0:
+        for i in range(skiprow):
+            f.readline()
+    if needtitle == 1:
+        title = f.readline()
+    while True:
+        buf = f.read(chunksize)
+        if buf:
+            yield title, buf, len(buf)
+        else:
+            f.close()
+            break
+
+
+def print_list_formating(print_list, step=4):
+    print()
+    print_list = [' ' + str(i + 1) + '、' + print_list[i] + ' ' for i in range(len(print_list))]
+    line_len = 0
+    for i in range(0, step):
+        max_len = 0
+        for j in range(i, len(print_list), step):
+            len_str = len(print_list[j].encode('gbk'))
+            if max_len < len_str: max_len = len_str
+        for j in range(i, len(print_list), step):
+            len_str = len(print_list[j].encode('gbk'))
+            print_list[j] = print_list[j] + ' ' * (max_len - len_str)
+        line_len += max_len
+    print('+' + '-' * line_len + '+')
+    for i in range(0, len(print_list), step):
+        list1 = print_list[i:i + step]
+        print('|' + ''.join(list1) + '|')
+    print('+' + '-' * line_len + '+')
+    print()
