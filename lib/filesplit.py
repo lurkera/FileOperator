@@ -41,24 +41,29 @@ class FileSplit():
         if skip_row is None: return
         trance_list = []
         print('\n---------------开始分割文件---------------\n')
-        if fp.endswith(self.transtypes):
+        if fp.lower().endswith(self.transtypes):
             trance_list = common.trans_files(fp, self.transtypes)
             if not trance_list: raise Exception('文件内容为空')
             split_file_list = trance_list
         else:
             split_file_list = [fp]
-        allsize = sum([path.getsize(x) for x in split_file_list])
-        currentsize = 0
+        allsize = sum([path.getsize(x) for x in split_file_list])   # 当前所有文件的大小
+        currentsize = 0     # 当前所有文件已读取大小
         for f in split_file_list:
             fid = 0
             (savepath, fbasename) = path.split(f)
+            fsize = path.getsize(f)     # 当前文件的大小
+            cursize = 0     # 当前文件已读取大小
             with open(f, mode='rb') as fobj:
                 for i in range(skip_row):
-                    currentsize += len(fobj.readline())
+                    tmp = fobj.readline()
+                    currentsize += len(tmp)
+                    cursize += len(tmp)
                 if need_title == 1:
                     title = fobj.readline()
                     currentsize += len(title)
-                while True:
+                    cursize += len(title)
+                while cursize < fsize:
                     fid += 1
                     (savename, saveextension) = path.splitext(fbasename)
                     savename = savename + '_' + str(fid) + saveextension
@@ -70,9 +75,9 @@ class FileSplit():
                         if not line: break
                         fobj1.write(line)
                         currentsize += len(line)
+                        cursize += len(line)
                         common.print_rateofprogress(currentsize, allsize)
                     fobj1.close()
-                    if currentsize == allsize: break
         if trance_list: [remove(x) for x in trance_list]
         print('\n\n---------------完成分割文件---------------\n')
         return True
@@ -94,7 +99,7 @@ class FileSplit():
         if split_size is None: return
         trance_list = []
         print('\n---------------开始分割文件---------------\n')
-        if fp.endswith(self.transtypes):
+        if fp.lower().endswith(self.transtypes):
             trance_list = common.trans_files(fp, self.transtypes)
             if not trance_list: raise Exception('文件内容为空...')
             split_file_list = trance_list
@@ -129,7 +134,7 @@ class FileSplit():
                         havechunk += len_lines
                         currentsize += len_lines
                         common.print_rateofprogress(currentsize, allsize)
-                    if split_size - havechunk > 0:
+                    if split_size - havechunk > 0:    # 剩余不足chunk一次的，再将剩余的读取一次
                         lines = fobj.readlines(split_size - havechunk)
                         fobj1.writelines(lines)
                         currentsize += sum([len(x) for x in lines])
@@ -145,7 +150,7 @@ class FileSplit():
         if fp is None: return
         trans_list = []
         print('\n---------------开始处理文件---------------\n')
-        if fp.endswith(self.transtypes):
+        if fp.lower().endswith(self.transtypes):
             trans_list = common.trans_files(fp, self.transtypes)
             if trans_list is None: raise Exception('文件内容为空')
             split_file_list = trans_list
@@ -157,10 +162,10 @@ class FileSplit():
             (savename, saveextension) = path.splitext(fbasename)
             skip_row = common.get_skip_row(self.opt[choice]['title'])
             if skip_row is None: return
-            split_header = self.__get_split_header(f,self.opt[choice]['title'],skip_row)
+            split_header = self.__get_split_header(f, self.opt[choice]['title'], skip_row)
             if not split_header: return
             encode = common.get_file_encode(f)
-            for t in common.trunk_file_byrow(f, encode, chunkline,skip_row):
+            for t in common.trunk_file_byrow(f, encode, chunkline, skip_row):
                 print(f'------正在生成文件------')
                 t_group = t.groupby(by=split_header)
                 for index, value in t_group:
@@ -204,11 +209,11 @@ class FileSplit():
                 else:
                     print('输入数字不能为0，请重新输入!')
 
-
-    def __get_split_header(self, f, optname,skiprow=0):
+    def __get_split_header(self, f, optname, skiprow=0):
         try:
             encode = common.get_file_encode(f)
-            tb_title = pd.read_csv(f, skiprows=skiprow,header=0, encoding=encode, error_bad_lines=False, low_memory=False,
+            tb_title = pd.read_csv(f, skiprows=skiprow, header=0, encoding=encode, error_bad_lines=False,
+                                   low_memory=False,
                                    nrows=0, keep_default_na=False)
             tb_title_columns_list = list(tb_title.columns)
         except Exception as e:
@@ -248,4 +253,3 @@ class FileSplit():
                     return [tb_title_columns_list[i - 1] for i in inp_list[0]]
                 else:
                     print('输入错误，请重新输入！')
-
