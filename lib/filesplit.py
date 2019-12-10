@@ -47,13 +47,13 @@ class FileSplit():
             split_file_list = trance_list
         else:
             split_file_list = [fp]
-        allsize = sum([path.getsize(x) for x in split_file_list])   # 当前所有文件的大小
-        currentsize = 0     # 当前所有文件已读取大小
+        allsize = sum([path.getsize(x) for x in split_file_list])  # 当前所有文件的大小
+        currentsize = 0  # 当前所有文件已读取大小
         for f in split_file_list:
             fid = 0
             (savepath, fbasename) = path.split(f)
-            fsize = path.getsize(f)     # 当前文件的大小
-            cursize = 0     # 当前文件已读取大小
+            fsize = path.getsize(f)  # 当前文件的大小
+            cursize = 0  # 当前文件已读取大小
             with open(f, mode='rb') as fobj:
                 for i in range(skip_row):
                     tmp = fobj.readline()
@@ -97,6 +97,8 @@ class FileSplit():
         if need_title is None: return
         split_size = self.__get_split_size(self.opt[choice]['title'])
         if split_size is None: return
+        skip_row = common.get_skip_row(self.opt[choice]['title'])
+        if skip_row is None: return
         trance_list = []
         print('\n---------------开始分割文件---------------\n')
         if fp.lower().endswith(self.transtypes):
@@ -113,9 +115,14 @@ class FileSplit():
             (savepath, fbasename) = path.split(f)
             fsize = path.getsize(f)
             with open(f, mode='rb') as fobj:
+                for i in range(skip_row):
+                    tmp = fobj.readline()
+                    currentsize += len(tmp)
+                    fsize -= len(tmp)
                 if need_title == 1:
                     title = fobj.readline()
                     currentsize += len(title)
+                    fsize -= len(title)
                 chunknum = split_size // chunksize  # 计算chunk次数
                 splitnum = ceil(fsize / split_size)  # 计算分割次数
                 for i in range(splitnum):
@@ -134,7 +141,7 @@ class FileSplit():
                         havechunk += len_lines
                         currentsize += len_lines
                         common.print_rateofprogress(currentsize, allsize)
-                    if split_size - havechunk > 0:    # 剩余不足chunk一次的，再将剩余的读取一次
+                    if split_size - havechunk > 0:  # 剩余不足chunk一次的，再将剩余的读取一次
                         lines = fobj.readlines(split_size - havechunk)
                         fobj1.writelines(lines)
                         currentsize += sum([len(x) for x in lines])
@@ -221,7 +228,7 @@ class FileSplit():
             return
         while True:
             common.print_list_formating(tb_title_columns_list, 4)
-            iptstr = f'[{optname}]请输入[分割字段]>>>'
+            iptstr = f'[{optname}]请输入分割字段>>>'
             column_input = input(iptstr).strip()
             if column_input:
                 if column_input.lower() == 'q': exit()
